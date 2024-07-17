@@ -1,12 +1,26 @@
 const { Post, Tag } = require('../models')
 
 async function create(req, res, next) {
-  const {title, body, tags} = req.body
-  // TODO: create a new post
-  // if there is no title or body, return a 400 status
-  // omitting tags is OK
+  try {
+    const {title, body, tags} = req.body
+    // TODO: create a new post
+    // if there is no title or body, return a 400 status
+    // omitting tags is OK
+    if(!title || !body) {
+      return res.status(400).send('title and body required')
+    } 
   // create a new post using title, body, and tags
-  // return the new post as json and a 200 status
+    const newPost = new Post({
+      title,
+      body,
+      tags
+    })
+    await newPost.save()
+    // return the new post as json and a 200 status
+    res.status(200).json(newPost)
+  } catch (err) {
+    res.status(500).send(err.message)
+  }
 }
 
 // should render HTML
@@ -16,6 +30,8 @@ async function get(req, res) {
     // TODO: Find a single post
     // find a single post by slug and populate 'tags'
     // you will need to use .lean() or .toObject()
+    const post = await Post.findOne({slug})
+    .populate('tags').lean()
     post.createdAt = new Date(post.createdAt).toLocaleString('en-US', {
       month: '2-digit',
       day: '2-digit',
@@ -76,19 +92,34 @@ async function update(req, res) {
     const {title, body, tags} = req.body
     const postId = req.params.id
     // TODO: update a post
-    // if there is no title or body, return a 400 status
-    // omitting tags is OK
+    // if there is no title or body, return a 400 status omitting tags is OK
+    if(!title || !body) {
+      return res.status(400).send('title and body required')
+    } 
     // find and update the post with the title, body, and tags
+    const updatedPost = await Post.findByIdAndUpdate(
+      postId,
+      {title, body, tags},
+      {new: true}
+    ).lean()
     // return the updated post as json
+    res.status(200).json(updatedPost)
+
   } catch(err) {
     res.status(500).send(err.message)
   }
 }
 
 async function remove(req, res, next) {
-  const postId = req.params.id
-  // TODO: Delete a post
-  // delete post by id, return a 200 status
+  try {
+    const postId = req.params.id
+    // TODO: Delete a post
+    // delete post by id, return a 200 status
+    const deletedPost = await Post.findByIdAndDelete(postId)
+    res.status(200).send('Post was successfully deleted')
+  } catch(err) {
+    res.status(500).send(err.message)
+  }
 }
 
 module.exports = {
